@@ -1,60 +1,62 @@
 
-# Style Store – Kubernetes + ArgoCD Microservices Demo
+# 🛍️ Style Store – Kubernetes + ArgoCD Microservices Demo
 
-This is a demo project showcasing a microservices-based architecture for a fictional e-commerce "Style Store" deployed to Kubernetes with GitOps via ArgoCD.
+This is a demo project showcasing a microservices-based architecture for a fictional e-commerce platform "Style Store", deployed to Kubernetes using GitOps via ArgoCD.
 
-## Architecture Overview
+---
 
-- **Frontend** (React or Nginx SPA)
-- **Auth Service** (FastAPI, PostgreSQL)
-- **Orders Service** (FastAPI, PostgreSQL)
-- **PostgreSQL** (single shared DB pod with two logical DBs)
-- **Ingress** (NGINX Ingress Controller)
-- **ArgoCD** (for GitOps-based deployment and sync)
-- **SonarQube** (optional, for code quality scanning)
+## 🧱 Architecture Overview
 
-## Project Structure
+- **Frontend** – React Single Page App served via NGINX (internal routing to backend)
+- **Auth Service** – FastAPI app, uses PostgreSQL
+- **Orders Service** – FastAPI app, uses PostgreSQL
+- **PostgreSQL** – Single shared pod hosting two logical databases: `auth_db`, `orders_db`
+- **ArgoCD** – For GitOps-based continuous delivery
+- **SonarQube** *(optional)* – For code quality checks
+- ❌ **Ingress** – Not used; NGINX inside the frontend handles all routing
+
+---
+
+## 📂 Project Structure
 
 ```
 style-store-gitops/
 ├── apps/
-│   ├── backend/      # FastAPI-based backend microservices (auth, orders)
-│   └── frontend/     # React-based frontend app
-└── infra/
-    ├── argo/         # ArgoCD Application manifests
-    ├── K8s/          # Kubernetes manifests: Deployments, Services, Ingress, Jobs
-    └── README.md     # This documentation file
+│   ├── backend/      # FastAPI backend services: auth, orders
+│   └── frontend/     # React + NGINX-based frontend app
+├── infra/
+│   ├── argo/         # ArgoCD Application manifests
+│   └── K8s/          # Kubernetes deployments, services, jobs
+└── README.md         # This documentation file
 ```
 
-## Ingress Routing
+---
 
-| Path               | Service         | Port |
-|--------------------|------------------|------|
-| `/api/auth/**`     | `auth-service`   | 8000 |
-| `/api/orders/**`   | `orders-service` | 8001 |
-| `/` (root)         | `frontend`       | 80   |
+## 🔀 Routing – Inside Frontend NGINX (Not Ingress)
 
-Make sure `minikube.local` is added to your `/etc/hosts`:
-```bash
-echo "$(minikube ip) minikube.local" | sudo tee -a /etc/hosts
-```
+| Path             | Routed To         | Kubernetes DNS                            | Port |
+|------------------|-------------------|-------------------------------------------|------|
+| `/auth/**`       | `auth-service`    | `auth-service.default.svc.cluster.local`  | 8000 |
+| `/api/orders/**` | `orders-service`  | `orders-service.default.svc.cluster.local`| 8000 |
+| `/`              | Static frontend   | Served by NGINX container                 | 80   |
 
-## Getting Started
+> All routing is handled via `nginx.conf` **inside the frontend Docker image**. No Kubernetes Ingress resource is applied.
+
+---
+
+## 🚀 Getting Started
 
 ### 1. Clone the GitOps Repo
+
 ```bash
 git clone https://github.com/de2pakchauhan/style-store-gitops.git
 cd style-store-gitops
 ```
 
-### 2. Apply Ingress Controller (NGINX)
-```bash
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.9.4/deploy/static/provider/cloud/deploy.yaml
-```
+### 2. Start Minikube
 
-Wait for the ingress controller pods to be ready:
 ```bash
-kubectl get pods -n ingress-nginx
+minikube start
 ```
 
 ### 3. Deploy ArgoCD
@@ -65,18 +67,21 @@ kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/st
 ```
 
 Access ArgoCD UI:
+
 ```bash
 kubectl port-forward svc/argocd-server -n argocd 8080:443
 ```
 
-Login:
+Log in:
+
 ```bash
 argocd login localhost:8080
 ```
 
-### 4. Setup ArgoCD App
+### 4. Create ArgoCD App (App of Apps)
 
-You can create an `Application` resource pointing to your GitHub repo like:
+Example:
+
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -96,46 +101,79 @@ spec:
     automated:
       selfHeal: true
       prune: true
-    syncOptions:
-    - CreateNamespace=true
 ```
 
 Apply:
+
 ```bash
-kubectl apply -f app-of-apps.yaml
+kubectl apply -f infra/argo/app-of-apps.yaml
 ```
 
-### 5. Initialize Databases (Auth & Orders)
+### 5. Initialize Databases
 
 ```bash
 kubectl apply -f apps/init-db/init-job.yaml
 ```
 
-It creates `auth_db` and `orders_db` in the PostgreSQL pod.
+Creates `auth_db` and `orders_db` inside the shared PostgreSQL pod.
 
-### 6. Verify
+---
+
+## 🌐 Accessing the App
+
+Port forward the frontend service:
+
+```bash
+kubectl port-forward svc/frontend-service 8080:80
+```
+
+Then open:
+
+```
+http://localhost:8080
+```
+
+---
+
+## 🧪 Verifying Setup
 
 ```bash
 kubectl get pods
 kubectl get svc
-kubectl get ingress
+kubectl get events
 ```
 
-Open your browser:
-```
-http://minikube.local/
-```
+You should see:
 
-## Optional: SonarQube + Quality Gate CI
-
-Configure SonarQube in a pod with ingress:
-- Add your GitHub repo as a project
-- Scan using Sonar Scanner in CI
-- Fail pipeline if Quality Gate fails
-- Optional: Add Slack notifications
+- `frontend`, `auth`, `orders`, and `postgres` pods
+- Internal communication working via DNS
+- Frontend proxying correctly to backend
 
 ---
 
-## License
+## 🧹 Optional: SonarQube + CI
 
-MIT – for demo/educational purposes.
+- Deploy SonarQube on a pod or external instance
+- Add GitHub repo as a project
+- Use SonarScanner to scan code during CI
+- Configure Quality Gate to fail pipeline if score is low
+- (Optional) Add Slack alert for gate failures
+
+---
+
+## 🛠️ Tech Stack
+
+- Kubernetes (Minikube)
+- ArgoCD
+- FastAPI (Python)
+- PostgreSQL
+- React + NGINX
+- SonarQube (optional)
+
+---
+
+## 📄 License
+
+MIT License – for demo and educational use.
+
+---
