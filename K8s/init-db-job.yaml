@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-db-job
+spec:
+  template:
+    spec:
+      containers:
+        - name: init-db
+          image: postgres:13
+          command: ["sh", "-c"]
+          args:
+            - |
+              until pg_isready -h postgres -p 5432; do
+                echo "Waiting for PostgreSQL to be ready..."
+                sleep 2
+              done
+              echo "PostgreSQL is ready. Running init.sql..."
+              PGPASSWORD=password psql -h postgres -U postgres -f /docker-entrypoint-initdb.d/init.sql
+          env:
+            - name: POSTGRES_PASSWORD
+              value: "password"
+            - name: PGPASSWORD
+              value: "password"  # Required for psql
+          volumeMounts:
+            - name: init-script
+              mountPath: /docker-entrypoint-initdb.d
+      restartPolicy: OnFailure
+      volumes:
+        - name: init-script
+          configMap:
+            name: init-db-script
