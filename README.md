@@ -18,17 +18,12 @@ This is a demo project showcasing a microservices-based architecture for a ficti
 ```
 style-store-gitops/
 ├── apps/
-│   ├── auth/
-│   ├── orders/
-│   ├── frontend/
-│   └── init-db/
-├── base/
-│   ├── postgres/
-│   ├── ingress/
-│   └── sonarqube/
-├── overlays/
-│   └── dev/
-└── README.md
+│   ├── backend/      # FastAPI-based backend microservices (auth, orders)
+│   └── frontend/     # React-based frontend app
+└── infra/
+    ├── argo/         # ArgoCD Application manifests
+    ├── K8s/          # Kubernetes manifests: Deployments, Services, Ingress, Jobs
+    └── README.md     # This documentation file
 ```
 
 ## Ingress Routing
