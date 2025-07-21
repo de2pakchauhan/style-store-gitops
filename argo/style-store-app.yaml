@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/de2pakchauhan/style-store-gitops
     targetRevision: HEAD
-    path: infra/K8s              # <--- This is now correct
+    path: K8s              # <--- This is now correct
   destination:
     server: https://kubernetes.default.svc
     namespace: default
