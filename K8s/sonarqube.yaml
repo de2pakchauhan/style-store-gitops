@@ -1,27 +1,14 @@
 apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: sonarqube-pv
-spec:
-  storageClassName: manual
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: "/mnt/data/sonarqube"
----
-apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: sonarqube-pvc
 spec:
-  storageClassName: manual
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
+  storageClassName: standard  # <- This enables dynamic provisioning
 ---
 apiVersion: apps/v1
 kind: Deployment
