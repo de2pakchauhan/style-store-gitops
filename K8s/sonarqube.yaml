@@ -1,27 +1,35 @@
 apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: sonarqube-pv
-spec:
-  storageClassName: manual
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: "/mnt/data/sonarqube"
----
-apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: sonarqube-pvc
+  name: sonarqube-data-pvc
 spec:
-  storageClassName: manual
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sonarqube-logs-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sonarqube-extensions-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -62,11 +70,13 @@ spec:
       volumes:
         - name: sonarqube-data
           persistentVolumeClaim:
-            claimName: sonarqube-pvc
+            claimName: sonarqube-data-pvc
         - name: sonarqube-logs
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: sonarqube-logs-pvc
         - name: sonarqube-extensions
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: sonarqube-extensions-pvc
 ---
 apiVersion: v1
 kind: Service
