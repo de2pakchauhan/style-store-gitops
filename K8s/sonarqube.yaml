@@ -83,9 +83,10 @@ kind: Service
 metadata:
   name: sonarqube
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: sonarqube
   ports:
     - port: 9000
       targetPort: 9000
+      nodePort: 30000
