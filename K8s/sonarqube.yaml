@@ -43,10 +43,20 @@ spec:
       initContainers:
         - name: fix-permissions
           image: busybox
-          command: ["sh", "-c", "chown -R 1000:1000 /opt/sonarqube/data"]
+          command:
+            - sh
+            - -c
+            - |
+              chown -R 1000:1000 /opt/sonarqube/data \
+              && chown -R 1000:1000 /opt/sonarqube/logs \
+              && chown -R 1000:1000 /opt/sonarqube/extensions
           volumeMounts:
             - name: sonarqube-data
               mountPath: /opt/sonarqube/data
+            - name: sonarqube-logs
+              mountPath: /opt/sonarqube/logs
+            - name: sonarqube-extensions
+              mountPath: /opt/sonarqube/extensions
       containers:
         - name: sonarqube
           image: sonarqube:lts-community
@@ -60,12 +70,20 @@ spec:
             - name: SONAR_JDBC_PASSWORD
               value: sonar
           volumeMounts:
-            - mountPath: /opt/sonarqube/data
-              name: sonarqube-data
+            - name: sonarqube-data
+              mountPath: /opt/sonarqube/data
+            - name: sonarqube-logs
+              mountPath: /opt/sonarqube/logs
+            - name: sonarqube-extensions
+              mountPath: /opt/sonarqube/extensions
       volumes:
         - name: sonarqube-data
           persistentVolumeClaim:
             claimName: sonarqube-pvc
+        - name: sonarqube-logs
+          emptyDir: {}
+        - name: sonarqube-extensions
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -73,8 +91,8 @@ metadata:
   name: sonarqube
 spec:
   type: ClusterIP
+  selector:
+    app: sonarqube
   ports:
     - port: 9000
       targetPort: 9000
-  selector:
-    app: sonarqube
